@@ -1,0 +1,31 @@
+{
+  "sites": [
+    {
+      "name": "ExampleTickets",
+      "availability_url": "https://example.com/api/tickets",
+      "notes": "Replace with the actual availability endpoint.",
+      "login": {
+        "type": "email_password",
+        "login_url": "https://example.com/login",
+        "email_env": "EXAMPLE_TICKETS_EMAIL",
+        "password_env": "EXAMPLE_TICKETS_PASSWORD",
+        "email_field": "email",
+        "password_field": "password",
+        "extra_payload": {
+          "remember_me": "true"
+        }
+      }
+    },
+    {
+      "name": "ExampleTicketsToken",
+      "availability_url": "https://example.com/api/token-protected",
+      "notes": "Illustrates a token-based integration.",
+      "login": {
+        "type": "token",
+        "token_env": "EXAMPLE_TICKETS_TOKEN",
+        "header_name": "Authorization",
+        "header_prefix": "Bearer "
+      }
+    }
+  ]
+}
