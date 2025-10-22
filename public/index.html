@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Live Raffle Tracker</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="page-header">
+      <div class="container">
+        <h1>Live Raffle Tracker</h1>
+        <p>Monitor raffle odds and deadlines in real time.</p>
+      </div>
+    </header>
+    <main class="container">
+      <section class="controls">
+        <div class="control">
+          <label for="search">Search</label>
+          <input type="search" id="search" placeholder="Search raffles" />
+        </div>
+        <div class="control">
+          <label for="sort">Sort by</label>
+          <select id="sort">
+            <option value="deadline">Soonest Deadline</option>
+            <option value="odds">Best Odds</option>
+          </select>
+        </div>
+        <div class="control">
+          <label for="odds">Max odds: <span id="odds-value">--</span>%</label>
+          <input type="range" id="odds" min="1" max="50" step="0.5" value="50" />
+        </div>
+        <div class="control">
+          <label for="ends-before">Ends before</label>
+          <input type="datetime-local" id="ends-before" />
+        </div>
+      </section>
+      <section>
+        <div id="status" role="status" aria-live="polite"></div>
+        <div id="raffle-grid" class="raffle-grid"></div>
+      </section>
+    </main>
+    <footer class="page-footer">
+      <div class="container">
+        <small>Data refreshes automatically every 10 seconds.</small>
+      </div>
+    </footer>
+    <script src="app.js" type="module"></script>
+  </body>
+</html>

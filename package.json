@@ -1,0 +1,10 @@
+{
+  "name": "raffle-dashboard",
+  "version": "1.0.0",
+  "description": "Raffle API and dashboard",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
