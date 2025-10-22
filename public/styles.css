@@ -1,0 +1,174 @@
+:root {
+  color-scheme: light dark;
+  --bg: #0f172a;
+  --surface: rgba(15, 23, 42, 0.85);
+  --surface-light: rgba(255, 255, 255, 0.75);
+  --text: #e2e8f0;
+  --accent: #38bdf8;
+  --accent-soft: rgba(56, 189, 248, 0.15);
+  --danger: #f97316;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+body {
+  margin: 0;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 1) 0%, rgba(15, 23, 42, 0.9) 100%);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.container {
+  width: min(1100px, 92vw);
+  margin: 0 auto;
+}
+
+.page-header,
+.page-footer {
+  background: rgba(15, 23, 42, 0.9);
+  padding: 1.5rem 0;
+  box-shadow: 0 6px 30px rgba(0, 0, 0, 0.2);
+}
+
+.page-header h1 {
+  margin-bottom: 0.3rem;
+}
+
+main {
+  flex: 1;
+  padding: 2rem 0 3rem;
+}
+
+.controls {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  margin-bottom: 1.75rem;
+  background: rgba(15, 23, 42, 0.65);
+  padding: 1.5rem;
+  border-radius: 1rem;
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.35);
+  backdrop-filter: blur(10px);
+}
+
+.control label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.control input,
+.control select {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.65rem;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: rgba(15, 23, 42, 0.75);
+  color: var(--text);
+  outline: none;
+  transition: border 0.2s ease, box-shadow 0.2s ease;
+}
+
+.control input:focus,
+.control select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+#status {
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  color: rgba(226, 232, 240, 0.85);
+}
+
+.raffle-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+}
+
+.raffle-card {
+  background: rgba(15, 23, 42, 0.8);
+  border-radius: 1.1rem;
+  padding: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  box-shadow: 0 30px 55px rgba(15, 23, 42, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.raffle-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), transparent 60%);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.raffle-card:hover::after {
+  opacity: 1;
+}
+
+.raffle-card h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.raffle-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.badge {
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.badge-odds {
+  background: rgba(14, 165, 233, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+}
+
+.badge-deadline {
+  background: rgba(248, 113, 113, 0.15);
+  color: #fca5a5;
+  border: 1px solid rgba(248, 113, 113, 0.35);
+}
+
+.highlight-odds {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft), 0 18px 35px rgba(56, 189, 248, 0.2);
+}
+
+.highlight-deadline {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2), 0 18px 35px rgba(249, 115, 22, 0.2);
+}
+
+@media (max-width: 600px) {
+  .controls {
+    padding: 1rem;
+  }
+
+  .raffle-card {
+    padding: 1rem;
+  }
+}
+
+.empty {
+  background: rgba(15, 23, 42, 0.7);
+  padding: 1.5rem;
+  border-radius: 1rem;
+  text-align: center;
+  border: 1px dashed rgba(148, 163, 184, 0.4);
+}
