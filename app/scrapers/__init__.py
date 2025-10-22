@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Iterable, Protocol
 
 LOGGER = logging.getLogger(__name__)
@@ -48,7 +48,7 @@ class StaticScraper:
                 price=5.0,
                 total_tickets=100,
                 tickets_remaining=42,
-                deadline=now.replace(hour=(now.hour + 6) % 24),
+                deadline=now + timedelta(hours=6),
             ),
             RaffleData(
                 source=self.source,
@@ -57,7 +57,7 @@ class StaticScraper:
                 price=10.0,
                 total_tickets=200,
                 tickets_remaining=180,
-                deadline=now.replace(day=min(now.day + 1, 28)),
+                deadline=now + timedelta(days=1),
             ),
         ]
 

@@ -27,7 +27,12 @@ records:
 python scripts/update_raffles.py
 ```
 
-Use the `-v` flag to enable verbose logging.
+Use the `-v` flag to enable verbose logging. Pass `--database-url` to override the
+database connection for a single run:
+
+```bash
+python scripts/update_raffles.py --database-url sqlite:///tmp/raffles.db
+```
 
 ## Scheduling ingestion
 

@@ -156,12 +156,19 @@ def serialize_raffle(raffle: "RaffleData") -> Dict[str, object]:
 
     data = asdict(raffle)
     deadline = data.pop("deadline")
-    if isinstance(deadline, datetime):
-        data["deadline_utc"] = deadline.replace(microsecond=0).isoformat()
-    else:
+    if not isinstance(deadline, datetime):
         raise TypeError("deadline must be a datetime instance in UTC")
+    if deadline.tzinfo is None:
+        raise ValueError("deadline must be timezone-aware")
+
+    deadline_utc = deadline.astimezone(timezone.utc).replace(microsecond=0)
+    data["deadline_utc"] = deadline_utc.isoformat().replace("+00:00", "Z")
+
     data["last_updated_utc"] = (
-        datetime.now(tz=timezone.utc).replace(microsecond=0).isoformat()
+        datetime.now(tz=timezone.utc)
+        .replace(microsecond=0)
+        .isoformat()
+        .replace("+00:00", "Z")
     )
     return data
 
