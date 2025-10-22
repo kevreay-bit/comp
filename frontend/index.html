@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Raffle Dashboard</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        margin: 0;
+        background: #f6f8fb;
+        color: #1f2933;
+      }
+      header {
+        background: #1f2933;
+        color: white;
+        padding: 1rem 1.5rem;
+      }
+      main {
+        padding: 1.5rem;
+      }
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+      label {
+        display: flex;
+        flex-direction: column;
+        font-size: 0.9rem;
+      }
+      input,
+      select {
+        padding: 0.5rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        min-width: 200px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      th,
+      td {
+        padding: 0.75rem;
+        text-align: left;
+        border-bottom: 1px solid #e2e8f0;
+      }
+      th {
+        background: #f1f5f9;
+        font-weight: 600;
+      }
+      tbody tr:hover {
+        background: #f8fafc;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        background: #eef2ff;
+        color: #3730a3;
+        padding: 0.25rem 0.5rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+      }
+      footer {
+        margin-top: 2rem;
+        font-size: 0.85rem;
+        color: #475569;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Raffle Dashboard</h1>
+      <p>View and filter raffle competitions in real time.</p>
+    </header>
+    <main>
+      <section class="controls">
+        <label>
+          Search
+          <input id="search" type="text" placeholder="Prize or title" />
+        </label>
+        <label>
+          Sort by
+          <select id="sort">
+            <option value="deadline">Earliest deadline</option>
+            <option value="odds">Best odds</option>
+          </select>
+        </label>
+        <label>
+          Max odds (0-1)
+          <input id="max-odds" type="number" min="0" max="1" step="0.01" />
+        </label>
+        <label>
+          Ends before
+          <input id="ends-before" type="datetime-local" />
+        </label>
+        <button id="refresh">Refresh now</button>
+      </section>
+      <table>
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Prize</th>
+            <th>Odds</th>
+            <th>Deadline</th>
+            <th>Tickets</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="raffle-body">
+          <tr>
+            <td colspan="6">Loading raffles…</td>
+          </tr>
+        </tbody>
+      </table>
+      <footer>
+        Updated: <span id="last-updated">never</span> · Auto-refreshes every 30 seconds
+      </footer>
+    </main>
+    <script>
+      const API_BASE = "http://localhost:8000";
+      const tableBody = document.getElementById("raffle-body");
+      const lastUpdatedSpan = document.getElementById("last-updated");
+
+      const searchInput = document.getElementById("search");
+      const sortSelect = document.getElementById("sort");
+      const maxOddsInput = document.getElementById("max-odds");
+      const endsBeforeInput = document.getElementById("ends-before");
+      const refreshButton = document.getElementById("refresh");
+
+      async function fetchRaffles() {
+        const params = new URLSearchParams();
+        if (searchInput.value) params.set("search", searchInput.value);
+        if (sortSelect.value) params.set("sort", sortSelect.value);
+        if (maxOddsInput.value) params.set("max_odds", maxOddsInput.value);
+        if (endsBeforeInput.value)
+          params.set("ends_before", new Date(endsBeforeInput.value).toISOString());
+
+        const response = await fetch(`${API_BASE}/raffles?${params.toString()}`);
+        const payload = await response.json();
+        renderRaffles(payload.results);
+        lastUpdatedSpan.textContent = payload.last_updated ?? "unknown";
+      }
+
+      function renderRaffles(raffles) {
+        if (!raffles.length) {
+          tableBody.innerHTML = `<tr><td colspan="6">No raffles matched your filters.</td></tr>`;
+          return;
+        }
+
+        tableBody.innerHTML = raffles
+          .map((raffle) => {
+            const odds =
+              raffle.odds !== null && raffle.odds !== undefined
+                ? `${(raffle.odds * 100).toFixed(2)}%`
+                : "–";
+            const deadline = raffle.deadline
+              ? new Date(raffle.deadline).toLocaleString()
+              : "Not specified";
+            const tickets = raffle.total_tickets
+              ? `${raffle.tickets_sold ?? "?"}/${raffle.total_tickets}`
+              : raffle.tickets_sold ?? "?";
+
+            return `
+              <tr>
+                <td>${raffle.title}</td>
+                <td>${raffle.prize}</td>
+                <td><span class="badge">${odds}</span></td>
+                <td>${deadline}</td>
+                <td>${tickets}</td>
+                <td><a href="${raffle.url}" target="_blank" rel="noopener">Visit</a></td>
+              </tr>
+            `;
+          })
+          .join("");
+      }
+
+      refreshButton.addEventListener("click", fetchRaffles);
+      searchInput.addEventListener("change", fetchRaffles);
+      sortSelect.addEventListener("change", fetchRaffles);
+      maxOddsInput.addEventListener("change", fetchRaffles);
+      endsBeforeInput.addEventListener("change", fetchRaffles);
+
+      setInterval(fetchRaffles, 30000);
+      fetchRaffles();
+    </script>
+  </body>
+</html>
