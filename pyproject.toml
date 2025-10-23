@@ -19,3 +19,9 @@ dependencies = [
 [project.scripts]
 raffle-update = "scripts.update_raffles:main"
 raffle-api = "raffle_backend.main:run"
+
+[tool.setuptools.packages.find]
+include = [
+    "raffle_backend",
+    "scripts",
+]

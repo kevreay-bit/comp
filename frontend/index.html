@@ -19,6 +19,42 @@
       main {
         padding: 1.5rem;
       }
+      .status {
+        background: #e2e8f0;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .status-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+      }
+
+      .status button {
+        padding: 0.4rem 0.75rem;
+        border-radius: 999px;
+        border: 1px solid #1f2933;
+        background: #1f2933;
+        color: white;
+        cursor: pointer;
+        font-size: 0.85rem;
+      }
+
+      .status button:hover {
+        background: #111827;
+      }
+
+      .status-message {
+        margin: 0;
+        font-size: 0.85rem;
+        color: #1f2933;
+      }
+
       .controls {
         display: flex;
         flex-wrap: wrap;
@@ -67,6 +103,26 @@
         border-radius: 999px;
         font-size: 0.75rem;
       }
+
+      .badge--muted {
+        background: #e2e8f0;
+        color: #1f2933;
+      }
+
+      .badge--info {
+        background: #dbeafe;
+        color: #1d4ed8;
+      }
+
+      .badge--success {
+        background: #dcfce7;
+        color: #166534;
+      }
+
+      .badge--error {
+        background: #fee2e2;
+        color: #b91c1c;
+      }
       footer {
         margin-top: 2rem;
         font-size: 0.85rem;
@@ -80,6 +136,17 @@
       <p>View and filter raffle competitions in real time.</p>
     </header>
     <main>
+      <section class="status">
+        <div class="status-row">
+          <span>API status:</span>
+          <span id="api-status" class="badge badge--muted">Unknown</span>
+          <button id="check-health" type="button">Check API</button>
+        </div>
+        <p id="status-message" class="status-message">
+          If the table below stays on “Loading raffles…” for more than a few seconds, click “Check API” to verify the backend is running.
+        </p>
+      </section>
+
       <section class="controls">
         <label>
           Search
@@ -127,6 +194,9 @@
       const API_BASE = "http://localhost:8000";
       const tableBody = document.getElementById("raffle-body");
       const lastUpdatedSpan = document.getElementById("last-updated");
+      const statusBadge = document.getElementById("api-status");
+      const statusMessage = document.getElementById("status-message");
+      const checkHealthButton = document.getElementById("check-health");
 
       const searchInput = document.getElementById("search");
       const sortSelect = document.getElementById("sort");
@@ -134,7 +204,55 @@
       const endsBeforeInput = document.getElementById("ends-before");
       const refreshButton = document.getElementById("refresh");
 
+      function updateStatus(text, tone = "muted", message = "") {
+        statusBadge.textContent = text;
+        statusBadge.className = `badge badge--${tone}`;
+        if (message) {
+          statusMessage.textContent = message;
+        }
+      }
+
+      async function fetchWithTimeout(resource, options = {}) {
+        const { timeout = 8000, ...init } = options;
+        const controller = new AbortController();
+        const id = setTimeout(() => controller.abort(), timeout);
+
+        try {
+          return await fetch(resource, { ...init, signal: controller.signal });
+        } finally {
+          clearTimeout(id);
+        }
+      }
+
+      async function checkHealth({ quiet = false } = {}) {
+        if (!quiet) {
+          updateStatus("Checking…", "info", "Contacting the /health endpoint to confirm the backend is alive.");
+        }
+        try {
+          const response = await fetchWithTimeout(`${API_BASE}/health`);
+          if (!response.ok) {
+            throw new Error(`Health check failed with status ${response.status}`);
+          }
+          const payload = await response.json();
+          const timestamp = payload.last_updated && payload.last_updated !== "never"
+            ? new Date(payload.last_updated).toLocaleString()
+            : "no data yet";
+          updateStatus("Online", "success", `API responded successfully. Last ingestion: ${timestamp}.`);
+          return payload;
+        } catch (error) {
+          updateStatus(
+            "Offline",
+            "error",
+            quiet
+              ? "Initial health check failed. Click “Check API” after starting the backend to retry."
+              : "Could not reach the API. Make sure `python -m uvicorn raffle_backend.main:app --reload` is running and that `python -m scripts.update_raffles` has been executed at least once."
+          );
+          throw error;
+        }
+      }
+
       async function fetchRaffles() {
+        updateStatus("Checking…", "info", "Loading raffles from the backend…");
         const params = new URLSearchParams();
         if (searchInput.value) params.set("search", searchInput.value);
         if (sortSelect.value) params.set("sort", sortSelect.value);
@@ -142,10 +260,35 @@
         if (endsBeforeInput.value)
           params.set("ends_before", new Date(endsBeforeInput.value).toISOString());
 
-        const response = await fetch(`${API_BASE}/raffles?${params.toString()}`);
-        const payload = await response.json();
-        renderRaffles(payload.results);
-        lastUpdatedSpan.textContent = payload.last_updated ?? "unknown";
+        try {
+          const query = params.toString();
+          const response = await fetchWithTimeout(
+            query ? `${API_BASE}/raffles?${query}` : `${API_BASE}/raffles`
+          );
+          if (!response.ok) {
+            throw new Error(`Request failed with status ${response.status}`);
+          }
+          const payload = await response.json();
+          renderRaffles(payload.results);
+          lastUpdatedSpan.textContent = payload.last_updated
+            ? new Date(payload.last_updated).toLocaleString()
+            : "unknown";
+          updateStatus(
+            "Online",
+            "success",
+            `Fetched ${payload.count} raffle${payload.count === 1 ? "" : "s"} successfully.`
+          );
+        } catch (error) {
+          console.error("Failed to load raffles", error);
+          tableBody.innerHTML =
+            '<tr><td colspan="6">Could not load raffles. Check that the API is running and CORS is allowed.</td></tr>';
+          lastUpdatedSpan.textContent = "error";
+          updateStatus(
+            "Offline",
+            "error",
+            "Fetching raffles failed. Confirm the backend server is running and that the database has been populated."
+          );
+        }
       }
 
       function renderRaffles(raffles) {
@@ -186,9 +329,13 @@
       sortSelect.addEventListener("change", fetchRaffles);
       maxOddsInput.addEventListener("change", fetchRaffles);
       endsBeforeInput.addEventListener("change", fetchRaffles);
+      checkHealthButton.addEventListener("click", () => {
+        checkHealth().catch((error) => console.error("Health check failed", error));
+      });
 
       setInterval(fetchRaffles, 30000);
       fetchRaffles();
+      checkHealth({ quiet: true }).catch((error) => console.error("Initial health probe failed", error));
     </script>
   </body>
 </html>

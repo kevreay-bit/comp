@@ -1,13 +1,59 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import Depends, FastAPI, Query, Response
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from .repository import RaffleRepository
 
+
+def _demo_raffles(now: datetime) -> list["RaffleModel"]:
+    """Return a handful of demo raffles for environments without data."""
+
+    return [
+        RaffleModel(
+            source="demo",
+            raffle_id="demo-gadget-pack",
+            title="Gadget Lovers Mega Bundle",
+            prize="Latest smartphone, tablet, and wireless earbuds",
+            total_tickets=500,
+            tickets_sold=125,
+            ticket_price=2.5,
+            deadline=(now + timedelta(days=7)),
+            url="https://example.com/raffles/gadget-pack",
+            last_seen=now,
+            odds=1 / 500,
+        ),
+        RaffleModel(
+            source="demo",
+            raffle_id="demo-weekend-getaway",
+            title="Luxury Weekend Getaway",
+            prize="Two-night stay at a 5-star countryside hotel",
+            total_tickets=350,
+            tickets_sold=48,
+            ticket_price=5.0,
+            deadline=(now + timedelta(days=14)),
+            url="https://example.com/raffles/weekend-getaway",
+            last_seen=now,
+            odds=1 / 350,
+        ),
+        RaffleModel(
+            source="demo",
+            raffle_id="demo-gaming-setup",
+            title="Ultimate Gaming Setup",
+            prize="4K monitor, mechanical keyboard, and pro headset",
+            total_tickets=750,
+            tickets_sold=312,
+            ticket_price=1.5,
+            deadline=(now + timedelta(days=21)),
+            url="https://example.com/raffles/gaming-setup",
+            last_seen=now,
+            odds=1 / 750,
+        ),
+    ]
 
 class RaffleModel(BaseModel):
     source: str
@@ -43,6 +89,13 @@ def create_app(repository: RaffleRepository) -> FastAPI:
     app = FastAPI(title="Raffle Dashboard API", version="0.1.0")
     repo_dependency = RepositoryProvider(repository)
 
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
     @app.get("/raffles", response_model=PaginatedRaffleResponse)
     def list_raffles(
         response: Response,
@@ -66,6 +119,12 @@ def create_app(repository: RaffleRepository) -> FastAPI:
         response.headers["Cache-Control"] = "no-store"
         if last_updated:
             response.headers["X-Last-Updated"] = last_updated.isoformat()
+        if not raffles and last_updated is None:
+            now = datetime.now(timezone.utc)
+            demo_entries = _demo_raffles(now)
+            response.headers["X-Last-Updated"] = now.isoformat()
+            return PaginatedRaffleResponse(results=demo_entries, count=len(demo_entries), last_updated=now)
+
         return PaginatedRaffleResponse(
             results=[RaffleModel(**raffle) for raffle in raffles],
             count=len(raffles),
