@@ -20,6 +20,25 @@ Install Python dependencies:
 pip install -e .
 ```
 
+> **Having trouble on Windows?** Some Windows editors can save `pyproject.toml` with a byte-order mark, which prevents `pip install -e .` from parsing the file and raises a `TOMLDecodeError`. If that happens, install the dependencies directly with:
+
+```bash
+pip install -r requirements.txt
+```
+
+> **Getting `Invalid requirement: diff --git ...`?** That message means the file was created from a Git diff instead of the raw contents. Open `requirements.txt`, delete everything inside, and replace it with just:
+>
+> ```text
+> fastapi>=0.109.0
+> uvicorn[standard]>=0.24.0
+> python-dateutil>=2.8.2
+> apscheduler>=3.10.4
+> ```
+>
+> Save the file and rerun `pip install -r requirements.txt`.
+
+This installs the FastAPI, Uvicorn, APScheduler, and `python-dateutil` packages the project depends on.
+
 ## Project layout
 
 ```
@@ -31,6 +50,14 @@ pip install -e .
 ```
 
 ## Step-by-step usage (no prior experience needed)
+
+### 0. Install the Python dependencies
+
+Before running any scripts, install the project requirements (this only needs to be done once per environment):
+
+```bash
+pip install -e .
+```
 
 ### 1. Run the ingestion pipeline once
 
@@ -52,6 +79,14 @@ uvicorn raffle_backend.main:app --reload
 
 The API becomes available at <http://localhost:8000>. Visit <http://localhost:8000/docs> for interactive documentation.
 
+> **Windows tip:** If PowerShell says `'uvicorn' is not recognized`, run the command through Python instead:
+>
+> ```bash
+> python -m uvicorn raffle_backend.main:app --reload
+> ```
+>
+> Alternatively, add `%APPDATA%\Python\Python3x\Scripts` (replace `3x` with your Python version) to your `PATH` so the `uvicorn` executable is available directly.
+
 > **Tip:** `raffle_backend/main.py` also exposes a `run()` helper if you prefer invoking `python -m raffle_backend.main`.
 
 ### 3. Open the live dashboard
@@ -62,7 +97,13 @@ Open `frontend/index.html` in your browser (double-click it or run `python -m ht
 - Sort by earliest deadline or best odds
 - Filter by maximum odds or a “ends before” timestamp
 
-The built-in demo scraper seeds the database with sample data so you can see the UI in action immediately. Replace `DummyScraper` inside `raffle_backend/main.py` with the real scrapers when they are ready.
+The built-in demo scraper seeds the database with sample data so you can see the UI in action immediately. Even if you skip the ingestion step, the API now returns a few placeholder raffles so you can confirm the dashboard wiring before pointing it at real data. Replace `DummyScraper` inside `raffle_backend/main.py` with the real scrapers when they are ready.
+
+#### Dashboard troubleshooting
+
+- If the table stays on “Loading raffles…” use the **Check API** button near the top of the page. It pings `<API>/health` and reports whether the backend is reachable.
+- A red “Offline” badge means the browser could not reach the API. Confirm the terminal running `python -m uvicorn raffle_backend.main:app --reload` is still active and that `python -m scripts.update_raffles` completed successfully at least once.
+- You can also open <http://localhost:8000/raffles> directly in a browser tab to confirm the API returns JSON data.
 
 ## Configuration
 
